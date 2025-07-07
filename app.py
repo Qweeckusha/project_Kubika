@@ -70,32 +70,32 @@ class UniversalCubicPlotterApp:
         if self.after_id:
             self.root.after_cancel(self.after_id)
 
-        # Немедленно обновляем только пределы осей, без перерисовки данных
         scale_factor = 1 / 1.2 if event.button == 'up' else 1.2
 
         if ax == self.ax1:
-            cur_xlim = ax.get_xlim();
+            cur_xlim = ax.get_xlim()
             cur_ylim = ax.get_ylim()
             xdata, ydata = event.xdata, event.ydata
             if xdata is None or ydata is None: return
+
             new_xlim = [(cur_xlim[0] - xdata) * scale_factor + xdata, (cur_xlim[1] - xdata) * scale_factor + xdata]
             new_ylim = [(cur_ylim[0] - ydata) * scale_factor + ydata, (cur_ylim[1] - ydata) * scale_factor + ydata]
-            ax.set_xlim(new_xlim);
+
+            ax.set_xlim(new_xlim)
             ax.set_ylim(new_ylim)
 
-            # Планируем "тяжелую" перерисовку через 150 мс
             self.after_id = self.root.after(150, self.update_cartesian_plot)
 
         elif ax == self.ax2_polar:
             cur_rlim = ax.get_ylim()
-            new_r_max = cur_rlim[1] / scale_factor
-            if new_r_max < 0.01: new_r_max = 0.01
+            new_r_max = cur_rlim[1] * scale_factor
+            if new_r_max < 0.01:
+                new_r_max = 0.01
+
             ax.set_ylim(0, new_r_max)
 
-        # Быстрая перерисовка только осей и сетки, без данных
         self.canvas.draw_idle()
 
-    # Остальные функции остаются без изменений
     def reset_views(self):
         self.ax1.set_xlim(self.default_xlim)
         self.ax1.set_ylim(self.default_ylim)
@@ -167,7 +167,7 @@ class UniversalCubicPlotterApp:
                 r_branches[j].append(real_roots[j] if j < len(real_roots) else np.nan)
         ax.set_title("Полярная система (общий метод)")
         ax.grid(True)
-        colors = ['purple', 'red', 'green']
+        colors = ['purple', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan']
         for i, r_branch in enumerate(r_branches):
             ax.plot(theta, r_branch, color=colors[i])
         ax.set_ylim(0, self.default_rlim)
