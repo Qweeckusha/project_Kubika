@@ -10,17 +10,25 @@ class UniversalCubicPlotterApp:
         self.root = root
         self.root.title("Универсальный построитель кривых Кубика")
 
+        # Говорим Tkinter вызывать нашу функцию on_closing при закрытии окна
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         self.coeffs = {chr(65 + i): tk.DoubleVar(value=0.0) for i in range(10)}
         self.plot_resolution = 1000
         self.default_xlim = [-15, 15]
         self.default_ylim = [-15, 15]
         self.default_rlim = 15
-
-        # <<< 1. Добавляем атрибут для хранения ID таймера >>>
         self.after_id = None
 
         self.create_widgets()
         self.set_strophoid_example()
+
+    def on_closing(self):
+        """Обработчик корректного завершения работы приложения."""
+        # Сначала закрываем все фигуры Matplotlib, чтобы освободить ресурсы
+        plt.close('all')
+        # Затем уничтожаем главное окно Tkinter
+        self.root.destroy()
 
     def create_widgets(self):
         # ... (код без изменений) ...
