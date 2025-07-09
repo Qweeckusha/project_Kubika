@@ -22,7 +22,7 @@ class UniversalCubicPlotterApp:
 
         # --- УПРАВЛЕНИЕ СКОРОСТЬЮ ---
         # Единый шаг для обеих систем координат.
-        self.animation_frame_step = 20
+        self.animation_frame_step = 14
 
         self.coeffs = {chr(65 + i): tk.DoubleVar(value=0.0) for i in range(10)}
         self.plot_resolution = 1000
@@ -41,7 +41,6 @@ class UniversalCubicPlotterApp:
         self.root.destroy()
 
     def create_widgets(self):
-        # Эта часть без изменений
         control_frame = ttk.Frame(self.root, padding="10")
         control_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
         ttk.Label(control_frame, text="Коэффициенты F(x,y)=0:", font=("Arial", 11, "bold")).grid(row=0, columnspan=2,
@@ -81,9 +80,8 @@ class UniversalCubicPlotterApp:
         if ax is None: return
         if self.after_id:
             self.root.after_cancel(self.after_id)
-            self.after_id = None  # Важно обнулить, чтобы избежать двойного вызова
+            self.after_id = None
 
-        # <<< ИЗМЕНЕНИЕ 1: Разделяем логику для приближения и отдаления >>>
         if ax == self.ax1:
             scale_factor = 1.2 if event.button == 'down' else 1 / 1.2
             cur_xlim, cur_ylim = ax.get_xlim(), ax.get_ylim()
@@ -96,8 +94,6 @@ class UniversalCubicPlotterApp:
             ax.set_xlim(new_xlim)
             ax.set_ylim(new_ylim)
 
-            # Запускаем отложенное обновление для детализации в любом случае
-            # Функция update_cartesian_plot сама разберется, нужно ли "дорисовывать"
             self.after_id = self.root.after(150, self.update_cartesian_plot)
             self.canvas.draw_idle()
 
@@ -119,7 +115,7 @@ class UniversalCubicPlotterApp:
     def clear_coeffs(self):
         for var in self.coeffs.values(): var.set(0.0)
 
-    # --- Методы-примеры теперь всегда сбрасывают масштаб ---
+    # --- Методы-примеры ---
     def set_strophoid_example(self):
         self.clear_coeffs();
         a = 2.0
@@ -161,15 +157,11 @@ class UniversalCubicPlotterApp:
         xlim = self.default_xlim if reset_lims else self.ax1.get_xlim()
         ylim = self.default_ylim if reset_lims else self.ax1.get_ylim()
 
-        # <<< ИЗМЕНЕНИЕ 2: Удаляем только старые линии, а не всё подряд >>>
-        # Это сохраняет текущий масштаб, установленный в on_scroll
         for collection in self.ax1.collections:
             collection.remove()
 
         c = {key: var.get() for key, var in self.coeffs.items()}
 
-        # Создаем сетку для вычислений, которая немного больше видимой области,
-        # чтобы гарантированно дорисовать кривую по краям.
         x_range = xlim[1] - xlim[0]
         y_range = ylim[1] - ylim[0]
         x_grid = np.linspace(xlim[0] - x_range * 0.1, xlim[1] + x_range * 0.1, self.plot_resolution)
@@ -185,8 +177,6 @@ class UniversalCubicPlotterApp:
 
         contour_set = self.ax1.contour(X, Y, Z, levels=[0], colors='blue', linewidths=1.5)
 
-        # Логика генерации пути для анимации остается прежней,
-        # но она должна вызываться только при полном сбросе
         if reset_lims:
             self.path_data = None
             if contour_set.allsegs and contour_set.allsegs[0]:
@@ -200,8 +190,6 @@ class UniversalCubicPlotterApp:
         self.ax1.set_title("Декартова система (общий метод)")
         self.ax1.grid(True)
         self.ax1.set_aspect('equal', adjustable='box')
-        # Важно: принудительно устанавливаем обратно видимые границы,
-        # так как вычисляли на большей области.
         self.ax1.set_xlim(xlim)
         self.ax1.set_ylim(ylim)
 
@@ -239,17 +227,13 @@ class UniversalCubicPlotterApp:
 
         if reset_lims:
             if all_positive_r_values:
-                # Находим максимум среди РАЗУМНЫХ значений
                 max_r = max(all_positive_r_values)
-                # Устанавливаем предел чуть больше максимального, но не меньше 5 (для маленьких кривых)
-                # и не больше 25 (для кривых с асимптотами)
                 final_r_lim = np.clip(max_r * 1.2, 5, 25)
                 self.ax2_polar.set_ylim(0, final_r_lim)
             else:
-                # Если нет видимых частей, ставим масштаб по умолчанию
                 self.ax2_polar.set_ylim(0, self.default_rlim)
 
-    # --- Управление анимацией (без изменений) ---
+    # --- Управление анимацией ---
     def toggle_animation(self):
         if self.animation_var.get():
             if not self.animation:
